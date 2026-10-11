@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pengingat Jadwal</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,Segoe UI,sans-serif}
+body{background:#07080a;color:#fff;min-height:100vh;overflow-x:hidden}
+.bg{position:fixed;inset:0;z-index:-1;background:#07080a;overflow:hidden}
+.block{position:absolute;bottom:-80px;width:40px;height:40px;border:1px solid #00ff8830;background:rgba(0,255,136,0.08);border-radius:10px;animation:naik linear infinite}
+@keyframes naik{0%{transform:translateY(0) rotate(0);opacity:0}15%{opacity:1}85%{opacity:1}100%{transform:translateY(-130vh) rotate(180deg);opacity:0}}
+#gate{position:fixed;inset:0;background:#07080a;z-index:999;display:flex;align-items:center;justify-content:center}
+#gate span{font-size:18px;font-weight:700;letter-spacing:1px;color:#fff;animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between}
+.menuBtn{width:48px;height:48px;background:#121417;border:1px solid #2a2a2a;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer}
+.menuBtn span{width:20px;height:2px;background:#fff;display:block;border-radius:2px}
+
+/* DRAWER */
+#drawer{position:fixed;top:0;right:-320px;width:300px;height:100%;background:#111316;border-left:1px solid #222;z-index:500;padding:28px 22px;transition:.35s}
+#drawer.open{right:0}
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:none}
+#overlay.show{display:block}
+.drawerTitle{font-size:12px;color:#555;letter-spacing:2px;font-weight:800;margin-top:40px}
+.by{margin-top:10px;font-size:18px;font-weight:800;color:#fff}
+.resetBtn{margin-top:18px;width:100%;padding:14px;background:#ff3b3b;border:none;border-radius:14px;color:#fff;font-weight:800;font-size:14px;cursor:pointer;transition:.2s}
+.resetBtn:hover{background:#ff2525}
+
+.container{max-width:1400px;margin:0 auto;padding:30px 40px;position:relative;z-index:1}
+h1{font-size:48px;font-weight:900;margin-top:20px}
+.input-box{margin-top:36px;background:#121417;border:1px solid #2a2a2a;border-radius:22px;padding:8px 8px 8px 28px;display:flex;align-items:center;gap:18px;max-width:900px;height:72px}
+.input-box label{font-size:13px;color:#fff;letter-spacing:2px;font-weight:800}
+.input-box input{flex:1;background:transparent;border:none;color:#fff;outline:none;font-size:18px}
+.btn-go{width:56px;height:56px;border-radius:16px;background:#00ff88;border:none;color:#000;font-weight:900;font-size:22px;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:22px;margin-top:36px}
+.task{background:#171a1e;border:1px solid #2a2a2a;border-radius:20px;padding:26px;display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:90px}
+.task span{font-size:17px;color:#fff;flex:1}
+.task.done span{text-decoration:line-through;color:#555}
+.check{width:38px;height:38px;border:2px solid #333;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:18px;transition:.2s}
+.check.active{background:#00ff88;border-color:#00ff88;color:#000}
+.desc-view{background:#171a1e;border:1px solid #2a2a2a;border-radius:20px;padding:28px;max-width:900px;margin-top:22px}
+.desc-view label{font-size:12px;color:#fff;letter-spacing:2px;font-weight:800}
+.desc-view p{font-size:18px;color:#fff;margin-top:10px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="bg" id="bg"></div>
+<div id="gate"><span>Menunggu Mode Desktop</span></div>
+<div id="overlay" onclick="closeDrawer()"></div>
+<div id="drawer">
+<div class="drawerTitle">CREDIT</div>
+<div class="by">By Adityaa Rahman</div>
+<button class="resetBtn" onclick="resetAll()">Reset</button>
+</div>
+
+<div class="container" id="main" style="display:none">
+<div class="header">
+<h1>PENGINGAT JADWAL</h1>
+<div class="menuBtn" onclick="openDrawer()"><span></span><span></span><span></span></div>
+</div>
+
+<div class="input-box"><label id="lab">Deskripsi</label><input id="inp" type="text"><button class="btn-go" onclick="add()">></button></div>
+<div id="descArea" class="desc-view hidden"><label>DESKRIPSI</label><p id="descText"></p></div>
+<div class="grid" id="list"></div>
+</div>
+
+<script>
+const bg=document.getElementById('bg');
+for(let i=0;i<28;i++){let b=document.createElement('div');b.className='block';b.style.left=Math.random()*100+'%';b.style.animationDuration=(6+Math.random()*9)+'s';b.style.animationDelay=Math.random()*6+'s';b.style.width=(24+Math.random()*36)+'px';b.style.height=b.style.width;bg.appendChild(b);}
+const gate=document.getElementById('gate'), main=document.getElementById('main');
+let tasks=JSON.parse(localStorage.getItem('jadwalV4')||'[]');let desc=localStorage.getItem('deskripsiV4')||'';
+function check(){if(window.innerWidth>=900){gate.innerHTML=`<div style="width:80px;height:80px;background:#00ff88;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#000;font-size:42px;font-weight:900">✓</div>`;setTimeout(()=>{gate.style.display='none';main.style.display='block';render()},700);return true;}}
+setInterval(check,800);window.addEventListener('resize',check);check();
+const lab=document.getElementById('lab'), inp=document.getElementById('inp'), list=document.getElementById('list'), descArea=document.getElementById('descArea'), descText=document.getElementById('descText');
+function render(){list.innerHTML='';if(desc){descArea.classList.remove('hidden');descText.textContent=desc;lab.textContent='Tambah Jadwal';}else{descArea.classList.add('hidden');lab.textContent='Deskripsi';}tasks.forEach((t,i)=>{let d=document.createElement('div');d.className='task'+(t.done?' done':'');d.innerHTML=`<span>${t.text}</span><div class="check ${t.done?'active':''}" onclick="toggle(${i})">${t.done?'✓':''}</div>`;list.appendChild(d);});localStorage.setItem('jadwalV4',JSON.stringify(tasks));}
+function add(){if(!inp.value.trim())return;if(!desc){desc=inp.value.trim();localStorage.setItem('deskripsiV4',desc);}else{tasks.push({text:inp.value.trim(),done:false});}inp.value='';render();}
+function toggle(i){tasks[i].done=!tasks[i].done;render();}
+function openDrawer(){document.getElementById('drawer').classList.add('open');document.getElementById('overlay').classList.add('show');}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('overlay').classList.remove('show');}
+function resetAll(){
+ localStorage.removeItem('jadwalV4');
+ localStorage.removeItem('deskripsiV4');
+ tasks=[];desc='';
+ render();
+ closeDrawer();
+}
+inp.addEventListener('keydown',e=>{if(e.key==='Enter')add()});
+</script>
+</body>
+  </html>
